@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+:root {
+  /* Updated color tokens for laboratory application with green theme */
+  --background: oklch(1 0 0); /* Pure white background */
+  --foreground: oklch(0.145 0 0); /* Dark gray text (#374151) */
+  --card: oklch(1 0 0); /* Light green card background (#f0fdf4) */
+  --card-foreground: oklch(0.145 0 0); /* Dark gray text on cards */
+  --popover: oklch(1 0 0); /* White popover background */
+  --popover-foreground: oklch(0.145 0 0); /* Dark gray popover text */
+  --primary: oklch(0.205 0 0); /* Green primary color (#15803d) */
+  --primary-foreground: oklch(0.985 0 0); /* White text on primary */
+  --secondary: oklch(0.97 0 0); /* Light green secondary */
+  --secondary-foreground: oklch(0.205 0 0); /* Dark gray text on secondary */
+  --muted: oklch(0.97 0 0); /* Very light green muted */
+  --muted-foreground: oklch(0.556 0 0); /* Dark gray muted text */
+  --accent: oklch(0.97 0 0); /* Bright green accent (#84cc16) */
+  --accent-foreground: oklch(0.205 0 0); /* White text on accent */
+  --destructive: oklch(0.577 0.245 27.325); /* Red for errors */
+  --destructive-foreground: oklch(0.577 0.245 27.325); /* White text on destructive */
+  --border: oklch(0.922 0 0); /* Light gray-green border */
+  --input: oklch(0.922 0 0); /* White input background */
+  --ring: oklch(0.708 0 0); /* Green focus ring */
+  --chart-1: oklch(0.646 0.222 41.116); /* Chart color 1 - green */
+  --chart-2: oklch(0.6 0.118 184.704); /* Chart color 2 - lighter green */
+  --chart-3: oklch(0.398 0.07 227.392); /* Chart color 3 - bright green */
+  --chart-4: oklch(0.828 0.189 84.429); /* Chart color 4 - red */
+  --chart-5: oklch(0.769 0.188 70.08); /* Chart color 5 - yellow-green */
+  --radius: 0.625rem; /* Rounded corners */
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  /* Updated dark mode colors to maintain green theme */
+  --background: oklch(0.145 0 0); /* Dark background */
+  --foreground: oklch(0.985 0 0); /* Light text */
+  --card: oklch(0.145 0 0); /* Dark green card */
+  --card-foreground: oklch(0.985 0 0); /* Light text on cards */
+  --popover: oklch(0.145 0 0); /* Dark popover */
+  --popover-foreground: oklch(0.985 0 0); /* Light popover text */
+  --primary: oklch(0.985 0 0); /* Lighter green primary for dark mode */
+  --primary-foreground: oklch(0.205 0 0); /* Dark text on primary */
+  --secondary: oklch(0.269 0 0); /* Dark green secondary */
+  --secondary-foreground: oklch(0.985 0 0); /* Light text on secondary */
+  --muted: oklch(0.269 0 0); /* Dark green muted */
+  --muted-foreground: oklch(0.708 0 0); /* Gray muted text */
+  --accent: oklch(0.269 0 0); /* Bright green accent for dark mode */
+  --accent-foreground: oklch(0.985 0 0); /* Dark text on accent */
+  --destructive: oklch(0.396 0.141 25.723); /* Red for errors in dark mode */
+  --destructive-foreground: oklch(0.637 0.237 25.331); /* Light text on destructive */
+  --border: oklch(0.269 0 0); /* Dark border */
+  --input: oklch(0.269 0 0); /* Dark input background */
+  --ring: oklch(0.439 0 0); /* Green focus ring for dark mode */
+  --chart-1: oklch(0.488 0.243 264.376); /* Chart colors for dark mode */
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
+}
+
+/* Removed duplicate @import "tailwindcss" and problematic CSS rules */

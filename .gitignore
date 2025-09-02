@@ -1,0 +1,54 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+package-lock.json
+/package-lock.json
+.package-lock.json
+package-lock.json
+**/package-lock.json
+
+# production
+/build
+app/dist
+app\dist
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+venv-backend
+# env files
+.env*
+.venv
+dist
+app/dist
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+venv311/
+backend/venv-backend
+backend/venv/
+backend/__pycache__
+
+__pycache__/
+backend/*.__pycache__
+backend/*.pyc
+
+.gitignore/
+backend/downloads/
+backend/results/
+backend/temp/
+backend/static/
+backend/downloads
+backend/results
+backend/uploads
+package-lock.json

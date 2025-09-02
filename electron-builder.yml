@@ -1,0 +1,43 @@
+appId: com.tac7.paintdefect
+productName: Paint Defect Analyzer
+
+directories:
+  output: build
+
+files:
+  - electron/**/*
+  - package.json
+
+extraResources:
+  # --- FRONTEND: statik export (out/) → resources/app/
+  - from: out
+    to: app
+    filter: ["**/*"]
+
+  # --- BACKEND: (ikisi de opsiyonel; hangisini kullanıyorsan onu bırak)
+  # 2A) Gömülü Python runtime + paketler (önerilen)
+  - from: backend/python
+    to: backend/python
+    filter: ["**/*"]
+
+
+  # Backend kod & modeller
+  - from: backend/main.py
+    to: backend/main.py
+  - from: backend/models
+    to: backend/models
+
+asar: true
+
+win:
+  target:
+    - nsis
+    - portable
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  icon: "public/icon.ico"
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: "${productName}-Setup-${version}.${ext}"
