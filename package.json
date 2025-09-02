@@ -3,13 +3,9 @@
   "version": "1.0.0",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "concurrently \"next dev -p 3000\" \"cross-env ELECTRON_DISABLE_SECURITY_WARNINGS=1 electron .\"",
-    "build:front": "next build",
-    "dist:win": "cross-env NODE_ENV=production electron-builder -w -c electron-builder.yml",
-    "dist:mac": "cross-env NODE_ENV=production electron-builder -m -c electron-builder.yml",
-    "dist": "npm run build:front && npm run dist:win && npm run dist:mac",
-    "open:mac": "open \"build/mac-arm64/Paint Defect Analyzer.app\"",
-    "run:mac": "\"build/mac-arm64/Paint Defect Analyzer.app/Contents/MacOS/Paint Defect Analyzer\""
+    "dev": "concurrently \"next dev -p 3000\"",
+    "build:front": "next build"
+    
   },
   "dependencies": {
     "@heroicons/react": "2.1.1",
@@ -72,8 +68,6 @@
     "concurrently": "9.2.1",
     "critters": "0.0.22",
     "cross-env": "7.0.3",
-    "electron": "31.0.0",
-    "electron-builder": "24.13.3",
     "postcss": "8.5.6",
     "tailwindcss": "3.4.13"
   },

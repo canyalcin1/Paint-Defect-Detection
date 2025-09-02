@@ -213,64 +213,64 @@ export default function PaintDefectAnalyzer() {
     }
   };
 
-const processImages = async () => {
-  if (serverStatus !== "online") {
-    setError("Backend server is not available");
-    return;
-  }
-  if (!runGroup.trim()) {
-    setError("Lütfen önce 'Klasör adı (grup)' girin.");
-    return;
-  }
-
-  setIsProcessing(true);
-  setProcessingProgress(0);
-  setError(null);
-
-  try {
-    setProcessingProgress(20);
-    const uploaded = await uploadFiles();
-    if (uploaded.length === 0) throw new Error("No files uploaded");
-
-    setProcessingProgress(40);
-
-    // ✅ filenames string listesi garanti altına alınıyor
-    const onlyNames = uploaded.map((f) => f.toString());
-
-    const formData = new FormData();
-    formData.append("model_name", selectedModel);
-    formData.append("confidence", confidence.toString());
-    formData.append("filenames", JSON.stringify(onlyNames));
-    formData.append("run_group", runGroup.trim() || "DefaultGroup");
-
-    const response = await fetch(`${API_BASE_URL}/analyze`, {
-      method: "POST",
-      body: formData,
-    });
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Analysis failed: ${response.status} ${errText}`);
+  const processImages = async () => {
+    if (serverStatus !== "online") {
+      setError("Backend server is not available");
+      return;
+    }
+    if (!runGroup.trim()) {
+      setError("Lütfen önce 'Klasör adı (grup)' girin.");
+      return;
     }
 
-    setProcessingProgress(80);
-    const data: AnalysisResponse = await response.json();
-    setProcessingProgress(100);
-    setResults(data.results);
-    setAnalysisResponse(data);
+    setIsProcessing(true);
+    setProcessingProgress(0);
+    setError(null);
 
-    setTimeout(() => {
+    try {
+      setProcessingProgress(20);
+      const uploaded = await uploadFiles();
+      if (uploaded.length === 0) throw new Error("No files uploaded");
+
+      setProcessingProgress(40);
+
+      // ✅ filenames string listesi garanti altına alınıyor
+      const onlyNames = uploaded.map((f) => f.toString());
+
+      const formData = new FormData();
+      formData.append("model_name", selectedModel);
+      formData.append("confidence", confidence.toString());
+      formData.append("filenames", JSON.stringify(onlyNames));
+      formData.append("run_group", runGroup.trim() || "DefaultGroup");
+
+      const response = await fetch(`${API_BASE_URL}/analyze`, {
+        method: "POST",
+        body: formData,
+      });
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Analysis failed: ${response.status} ${errText}`);
+      }
+
+      setProcessingProgress(80);
+      const data: AnalysisResponse = await response.json();
+      setProcessingProgress(100);
+      setResults(data.results);
+      setAnalysisResponse(data);
+
+      setTimeout(() => {
+        setIsProcessing(false);
+        setProcessingProgress(0);
+      }, 400);
+
+      // geçmişi tazele
+      loadHistory(historySearch);
+    } catch (err: any) {
+      setError(`Analysis failed: ${err}`);
       setIsProcessing(false);
       setProcessingProgress(0);
-    }, 400);
-
-    // geçmişi tazele
-    loadHistory(historySearch);
-  } catch (err: any) {
-    setError(`Analysis failed: ${err}`);
-    setIsProcessing(false);
-    setProcessingProgress(0);
-  }
-};
+    }
+  };
 
   // fort the help pop up
   const [isHelpOpen, setIsHelpOpen] = useState(false);
