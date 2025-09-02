@@ -6,6 +6,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 type HelpDialogProps = {
   open: boolean;
@@ -105,13 +106,10 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
           </p>
         </div>
 
-        <DialogFooter className="mt-4 flex justify-end">
-          <button
-            onClick={() => onOpenChange(false)}
-            className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg text-white transition-colors"
-          >
+        <DialogFooter className="mt-4 flex justify-between">
+          <Button onClick={() => onOpenChange(false)} variant="outline">
             Close
-          </button>
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

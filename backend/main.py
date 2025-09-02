@@ -3,7 +3,9 @@ import os, re, logging
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Dict, Any
+from fastapi import Body
 import json
+from fastapi.responses import JSONResponse
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,6 +17,8 @@ from model_handler import YOLOModelHandler
 from image_processor import ImageProcessor
 from report_generator import ReportGenerator
 from file_manager import FileManager
+from fastapi import HTTPException
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -63,6 +67,63 @@ def slugify(name: str) -> str:
 def health():
     return {"ok": True}
 
+# TO delete images from "uploads" folder 
+@app.delete("/delete-upload/{filename}")
+async def delete_upload(filename: str):
+    """
+    Delete a file from the uploads directory by filename.
+    """
+    file_path = os.path.join(UPLOADS_DIR, filename)
+
+    # security: prevent path traversal
+    if not os.path.abspath(file_path).startswith(os.path.abspath(UPLOADS_DIR)):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        os.remove(file_path)
+        return JSONResponse({"message": f"{filename} deleted"})
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete: {e}")
+    
+    
+    # to delete multiple history runs
+@app.delete("/history/delete-multiple")
+async def delete_multiple_history(items: list[dict] = Body(...)):
+    """
+    Delete multiple history runs. 
+    Each item must include {group_slug, run_id}.
+    """
+    deleted = []
+    errors = []
+
+    for item in items:
+        group_slug = item.get("group_slug")
+        run_id = item.get("run_id")
+        if not group_slug or not run_id:
+            errors.append(item)
+            continue
+
+        # Doğru: RESULTS_DIR kullan
+        folder_path = RESULTS_DIR / group_slug / run_id
+
+        if not folder_path.exists():
+            errors.append(item)
+            continue
+
+        try:
+            import shutil
+            shutil.rmtree(folder_path)
+            deleted.append(item)
+        except Exception as e:
+            errors.append({"item": item, "error": str(e)})
+
+    return {"deleted": deleted, "errors": errors}
+
+    
+    
 @app.post("/upload-images")
 async def upload_images(files: List[UploadFile] = File(...)):
     uploaded_files, failed_files = [], []
@@ -96,7 +157,7 @@ async def analyze_images(
     """
     Yeni kayıt yapısı:
     results/<group-slug>/<run_id>/processed_*.jpg
-    uploads/* ve temp/* dosyaları analiz sonrası silinir.
+    temp/* dosyaları analiz sonrası silinir.
     """
     try:
         # 👇 burada daha toleranslı parse edelim
@@ -150,10 +211,7 @@ async def analyze_images(
             )
             if not conv.get("success", False):
                 logger.error(f"Convert failed: {fn} -> {conv.get('error')}")
-                try:
-                    src_path.unlink(missing_ok=True)
-                except Exception:
-                    pass
+               
                 continue
 
             pred_input = conv["path"]  # TEMP_DIR/...jpg
@@ -189,7 +247,7 @@ async def analyze_images(
             # 4) temizlik: temp + uploads
             try:
                 Path(pred_input).unlink(missing_ok=True)
-                src_path.unlink(missing_ok=True)
+              #  src_path.unlink(missing_ok=True)
             except Exception as e:
                 logger.warning(f"Cleanup warning: {e}")
 
@@ -277,6 +335,24 @@ async def history_rename_run(group_slug: str, run_id: str, new_run_id: str = For
     if not ok:
         raise HTTPException(status_code=404, detail="Run not found or cannot rename")
     return {"success": True, "run_id": new_run_id}
+
+@app.get("/uploads")
+def list_uploads():
+    try:
+        files = []
+        for p in sorted(UPLOADS_DIR.iterdir()):
+            if p.is_file():
+                st = p.stat()
+                files.append({
+                    "name": p.name,
+                    "size": st.st_size,            # bytes
+                    "mtime": int(st.st_mtime),     # unix seconds
+                    "url": f"/static/uploads/{p.name}",
+                })
+        return {"files": files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # (İstersen halen rapor üret + paketle için bu endpointi de koruyalım)
 @app.post("/download-results")

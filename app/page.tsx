@@ -17,22 +17,24 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { UploadsDialog } from "@/components/UploadsDialog";
+
 import {
   ArrowUpTrayIcon as Upload,
   ArrowDownTrayIcon as Download,
   EyeIcon as Eye,
-  Cog6ToothIcon as Settings,
   PhotoIcon as FileImage,
   BoltIcon as Zap,
   ExclamationTriangleIcon as AlertCircle,
   CheckCircleIcon as CheckCircle,
   ServerIcon as Server,
-  CircleStackIcon as HardDrive,
   TrashIcon as Trash2,
   FolderIcon as Folder,
   PencilSquareIcon as Pencil,
   MagnifyingGlassIcon as Search,
 } from "@heroicons/react/24/outline";
+
+type UploadItem = { name: string; size: number; mtime: number; url: string };
 
 interface DetectionResult {
   id: string;
@@ -93,9 +95,10 @@ export default function PaintDefectAnalyzer() {
     "checking" | "online" | "offline"
   >("checking");
   const [error, setError] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
-  const [diskUsage, setDiskUsage] = useState<any>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadItem[]>([]);
   const [isDownloading, setIsDownloading] = useState(false);
+
+  const [uploadsError, setUploadsError] = useState<string | null>(null);
 
   // yeni: grup adı & geçmiş
   const [runGroup, setRunGroup] = useState<string>("");
@@ -115,6 +118,7 @@ export default function PaintDefectAnalyzer() {
     checkServerHealth();
     loadAvailableModels();
     loadHistory();
+    fetchUploads();
   }, []);
 
   const checkServerHealth = async () => {
@@ -190,6 +194,63 @@ export default function PaintDefectAnalyzer() {
     setError(null);
   }, []);
 
+  const [selectedHistoryItems, setSelectedHistoryItems] = useState<Set<string>>(
+    new Set()
+  );
+
+  const toggleHistoryCheckbox = (key: string) => {
+    setSelectedHistoryItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const selectAllHistory = () => {
+    if (selectedHistoryItems.size === history.length) {
+      setSelectedHistoryItems(new Set());
+    } else {
+      setSelectedHistoryItems(
+        new Set(history.map((h) => `${h.group_slug}__${h.run_id}`))
+      );
+    }
+  };
+
+  const deleteSelectedHistory = async () => {
+    if (selectedHistoryItems.size === 0) return;
+    if (!confirm("Seçili klasörleri silmek istediğinize emin misiniz?")) return;
+
+    const items = Array.from(selectedHistoryItems).map((key) => {
+      const [group_slug, run_id] = key.split("__");
+      return { group_slug, run_id };
+    });
+
+    await fetch(`${API_BASE_URL}/history/delete-multiple`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(items),
+    });
+
+    setSelectedHistoryItems(new Set());
+    loadHistory(historySearch);
+  };
+
+  const fetchUploads = useCallback(async () => {
+    try {
+      setUploadsError(null);
+      const res = await fetch(`${API_BASE_URL}/uploads`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      console.log("uploads fetched:", data.files); // 👀 see what the UI sees
+      setUploadedFiles(Array.isArray(data.files) ? data.files : []);
+    } catch (e: any) {
+      console.error("fetchUploads error:", e);
+      setUploadedFiles([]);
+      setUploadsError(e?.message ?? "Failed to load uploads");
+    }
+  }, []);
+
   const uploadFiles = async (): Promise<string[]> => {
     if (selectedFiles.length === 0) return [];
     try {
@@ -205,7 +266,7 @@ export default function PaintDefectAnalyzer() {
       const filenames: string[] = data.uploaded_files.map(
         (f: any) => f.filename
       );
-      setUploadedFiles(filenames);
+      await fetchUploads(); // get {name, size, mtime, url} from /uploads
       return filenames;
     } catch (err: any) {
       setError(`File upload failed: ${err}`);
@@ -272,8 +333,9 @@ export default function PaintDefectAnalyzer() {
     }
   };
 
-  // fort the help pop up
+  // State for help and uploads popups
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isUploadsOpen, setIsUploadsOpen] = useState(false);
 
   const downloadResults = async () => {
     if (!analysisResponse || results.length === 0) return;
@@ -411,29 +473,70 @@ export default function PaintDefectAnalyzer() {
       {/* Optional glass overlay for extra modern effect */}
       <div className="fixed inset-0 -z-10 backdrop-blur-lg bg-white/40" />
       <div className="max-w-7xl mx-auto space-y-8 p-8">
-        {/*HELP BUTTON */}
-        <div className="fixed bottom-8 left-8 z-50">
+        {/* HELP + UPLOADS BUTTONS */}
+        <div className="fixed bottom-8 left-8 z-50 flex flex-col gap-3 ml-[-4px]">
+          {/* Uploads Button */}
+          <div className="relative">
+            <button
+              onClick={async () => {
+                await fetchUploads();
+                setIsUploadsOpen(true);
+              }}
+              className="
+                bg-purple-600/80 
+                backdrop-blur-md
+                border border-purple-300/40
+                text-white 
+                font-semibold 
+                px-6 py-4 
+                rounded-full 
+                shadow-xl 
+                hover:bg-purple-700/90 
+                hover:shadow-2xl 
+                active:scale-95 
+                transition-all 
+                duration-200 
+                ease-in-out
+              "
+            >
+              Uploads
+            </button>
+
+            {/* Popup Panel */}
+            {isUploadsOpen}
+          </div>
+
+          {/* Help Button */}
           <button
             onClick={() => setIsHelpOpen(true)}
             className="
-              bg-blue-600/80 
-              backdrop-blur-md
-              text-white 
-              font-semibold 
-              px-6 py-4 
-              rounded-full 
-              shadow-xl 
-              hover:bg-blue-700/90 
-              hover:shadow-2xl 
-              active:scale-95 
-              transition-all 
-              duration-200 
-              ease-in-out
-            "
+      bg-blue-600/80 
+      backdrop-blur-md
+      border border-blue-300/40
+      text-white 
+      font-semibold 
+      px-6 py-4 
+      rounded-full 
+      shadow-xl 
+      hover:bg-blue-700/90 
+      hover:shadow-2xl 
+      active:scale-95 
+      transition-all 
+      duration-200 
+      ease-in-out
+    "
           >
             Help
           </button>
           <HelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
+          <UploadsDialog
+            open={isUploadsOpen}
+            onOpenChange={setIsUploadsOpen}
+            files={uploadedFiles}
+            onRefresh={fetchUploads}
+            error={uploadsError}
+            apiBaseUrl={API_BASE_URL}
+          />
         </div>
 
         {/* Header */}
@@ -759,56 +862,83 @@ export default function PaintDefectAnalyzer() {
                 Temizle
               </Button>
             </div>
+            <div className="flex gap-2 mb-4">
+              <Button variant="outline" onClick={selectAllHistory}>
+                {selectedHistoryItems.size === history.length
+                  ? "Tümünü Kaldır"
+                  : "Tümünü Seç"}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={deleteSelectedHistory}
+                disabled={selectedHistoryItems.size === 0}
+              >
+                Seçiliyi Sil
+              </Button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {history.map((h) => (
-                <Card
-                  key={`${h.group_slug}-${h.run_id}`}
-                  className="overflow-hidden"
-                >
-                  <div className="aspect-video bg-muted">
-                    {h.preview ? (
-                      <img
-                        src={`${API_BASE_URL}/static/${h.preview}`}
-                        alt=""
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-                        Önizleme yok
+              {history.map((h) => {
+                const key = `${h.group_slug}__${h.run_id}`;
+                const selected = selectedHistoryItems.has(key);
+
+                return (
+                  <Card key={key} className="overflow-hidden relative">
+                    {/* Checkbox sağ üstte */}
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleHistoryCheckbox(key)}
+                      className="absolute top-2 left-2 w-4 h-4 accent-blue-600 cursor-pointer"
+                    />
+
+                    {/* Önizleme */}
+                    <div className="aspect-video bg-muted">
+                      {h.preview ? (
+                        <img
+                          src={`${API_BASE_URL}/static/${h.preview}`}
+                          alt=""
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                          Önizleme yok
+                        </div>
+                      )}
+                    </div>
+
+                    {/* İçerik */}
+                    <CardContent className="p-3 space-y-2">
+                      <div className="font-medium">{h.group_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        Run: {h.run_id}
                       </div>
-                    )}
-                  </div>
-                  <CardContent className="p-3 space-y-2">
-                    <div className="font-medium">{h.group_name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      Run: {h.run_id}
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(h.created_at).toLocaleString()} ·{" "}
-                      {h.total_images} görsel · {h.total_detections} tespit
-                    </div>
-                    <div className="flex gap-2 pt-2">
-                      <Button size="sm" onClick={() => openHistory(h)}>
-                        Görüntüle
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={async () => {
-                          setSelectedHistory({
-                            group_slug: h.group_slug,
-                            run_id: h.run_id,
-                          });
-                          await zipHistory();
-                        }}
-                      >
-                        ZIP
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(h.created_at).toLocaleString()} ·{" "}
+                        {h.total_images} görsel · {h.total_detections} tespit
+                      </div>
+                      <div className="flex gap-2 pt-2">
+                        <Button size="sm" onClick={() => openHistory(h)}>
+                          Görüntüle
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={async () => {
+                            setSelectedHistory({
+                              group_slug: h.group_slug,
+                              run_id: h.run_id,
+                            });
+                            await zipHistory();
+                          }}
+                        >
+                          ZIP
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
             </div>
 
             {selectedHistory && (
