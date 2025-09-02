@@ -1,28 +1,60 @@
-# Boya Kusurları Analiz Sistemi
+# Paint Defect Analyzer
 
-YOLO tabanlı boya kusurları analiz uygulaması. R&D laboratuvarları için geliştirilmiş web arayüzlü bir çözümdür. Frontend (Next.js) statik olarak derlenir ve FastAPI backend tarafından servis edilir. Son kullanıcı için Python/Node gerektirmeyen **tek klasör EXE** paketi oluşturulabilir.
-
----
-
-## Özellikler
-
-- 🔬 **YOLO Model Desteği**: PyTorch `.pt` model dosyaları (örn. `CTP_Predict.pt`)
-- 📸 **Batch Analiz**: Birden fazla görüntüyü aynı anda analiz
-- 🧠 **TIFF → JPEG** dönüştürme ve yeniden boyutlandırma
-- 🖼️ **İşlenmiş Görsel** üretimi (bounding box + etiket)
-- 🗂️ **Arşiv/Geri Dönüş**: Geçmiş listeleme, yeniden adlandırma, zip’leme, silme
-- 📊 **Detaylı Raporlama**: Excel (`.xlsx`) ve JSON; sonuçları ZIP olarak indirme
-- ⚙️ **Parametre Ayarları**: confidence, iou, max_det, kalite vb.
-- 🌐 **Statik Frontend Servisi**: `backend/frontend_out` içeriği kök `/` üzerinden servis edilir
+A YOLO-based paint defect analysis app with a **web UI** for R&D labs. The frontend (Next.js) is exported statically and served by a FastAPI backend. For end users, you can ship a **single-folder package** that requires **no Python or Node.js** (Windows: `.exe`, macOS: native binary).
 
 ---
 
-## Hızlı Kurulum
+## Features
 
-> Aşağıdaki adımlar **geliştirici** makinesi içindir. Son kullanıcıya verilecek EXE için ayrıca “Üretim Paketleme (EXE)” bölümüne bakınız.
+- 🔬 **YOLO model support:** PyTorch `.pt` models (e.g., `CTP_Predict.pt`)
+- 📸 **Batch analysis:** analyze multiple images at once
+- 🧠 **TIFF → JPEG** conversion & resizing
+- 🖼️ **Processed image output:** bounding boxes + labels
+- 🗂️ **History / housekeeping:** list, rename, zip, delete past runs
+- 📊 **Reporting:** Excel (`.xlsx`) and JSON; download results as ZIP
+- ⚙️ **Parameters:** confidence, IoU, `max_det`, quality, etc.
+- 🌐 **Static frontend serving:** `backend/frontend_out` is served at the `/` root
 
-### 1) Python Backend Kurulumu (venv)
+---
 
+## Tech Stack
+
+- **Backend:** Python, FastAPI, Uvicorn, Ultralytics YOLO, OpenCV, Pillow, Pandas, ReportLab, ONNX Runtime  
+- **Frontend:** Next.js (App Router), React, Tailwind CSS, Heroicons  
+- **Packaging:** PyInstaller (`onedir`)
+
+---
+
+## Project Structure
+
+```
+├── app/                         # Next.js frontend (source)
+│   ├── page.tsx
+│   ├── layout.tsx
+│   └── globals.css
+├── backend/                     # Python backend
+│   ├── main.py                  # FastAPI entry
+│   ├── model_handler.py         # YOLO model mgmt
+│   ├── image_processor.py       # drawing / processing
+│   ├── report_generator.py      # report export
+│   ├── file_manager.py          # upload/zip/cleanup
+│   ├── models/                  # .pt models
+│   └── requirements.txt
+├── components/                  # React components
+├── public/                      # Static assets (optional)
+├── package.json                 # Frontend scripts
+└── dist/                        # PyInstaller output (production)
+```
+
+---
+
+## Quickstart (Developer Machine)
+
+> The steps below are for development. For the end-user package, see **Production Packaging**.
+
+### 1) Python backend (venv)
+
+**Windows (CMD):**
 ```bat
 cd Paint-Defect-Detection-by-YOLO
 
@@ -33,92 +65,81 @@ python -m pip install -U pip wheel
 pip install -r backend\requirements.txt
 ```
 
-### 2) Frontend Kurulumu ve Build
+**macOS / Linux (zsh/bash):**
+```bash
+cd Paint-Defect-Detection-by-YOLO
 
-**Seçenek A — script üzerinden**
-```bat
+python3 -m venv .venv
+source .venv/bin/activate
+
+python3 -m pip install -U pip wheel
+pip install -r backend/requirements.txt
+```
+
+### 2) Frontend build → static export
+
+**Option A — via script**
+```bash
 npm install
 npm run build:front
 ```
-> `npm run build:front` komutu `next build` + `next export` işlemlerini yapıp çıktıyı `backend/frontend_out/` altına koymalıdır.
+> `build:front` should run `next build` + `next export` and place output in `backend/frontend_out/`.
 
-**Seçenek B — manuel**
-```bat
+**Option B — manual**
+```bash
 npm install
 npx next build
 npx next export -o backend/frontend_out
 ```
-> İşlem sonunda `backend/frontend_out/` içinde `index.html` ve `_next/` klasörü görünmelidir.
 
-### 3) Model Yerleştirme
-- Eğitilmiş `.pt` modelinizi `backend/models/` klasörüne kopyalayın (örn. `CTP_Predict.pt`).
-- Arayüzden model seçilebilir; isterseniz varsayılan adı `best.pt` yapabilirsiniz.
+After this, `backend/frontend_out/` must contain `index.html` and `_next/`.
+
+### 3) Place your model
+Copy your trained `.pt` model into `backend/models/` (e.g., `CTP_Predict.pt`).  
+You can name the default model `best.pt` if desired.
 
 ---
 
-## Çalıştırma (Geliştirme)
+## Run (Development)
 
-### 1) Backend Servisi
-```bat
+**Start backend:**
+```bash
 cd backend
+# Windows: python; macOS/Linux: python3 (either works if your venv resolves it)
 python -m uvicorn main:app --host 127.0.0.1 --port 8000
 ```
-Arayüz: `http://127.0.0.1:8000`  
-Sağlık kontrolü: `GET /health` → `{ "ok": true }`  
-Modeller: `GET /models`
 
-> **Önemli:** `backend/main.py` dosyasının sonunda aşağıdaki guard bulunmalıdır:
+- UI: `http://127.0.0.1:8000`  
+- Health: `GET /health` → `{ "ok": true }`  
+- Models: `GET /models`
+
+> **Important (entry guard in `backend/main.py`):**
 > ```py
 > if __name__ == "__main__":
 >     import uvicorn
 >     uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
 > ```
-> PyInstaller ile paketlemede `uvicorn.run("main:app", ...)` **değil**, doğrudan `uvicorn.run(app, ...)` kullanılmalıdır.
-
-### 2) Frontend (Geliştirme Modu — Opsiyonel)
-İsterseniz Next.js’i dev modda da çalıştırabilirsiniz:
-```bat
-npm run dev
-```
-> Üretimde frontend statik servis edildiği için dev sunucusuna gerek yoktur.
+> For PyInstaller packaging, use `uvicorn.run(app, ...)` (pass the object), **not** `uvicorn.run("main:app", ...)`.
 
 ---
 
-## Kullanım
+## Usage
 
-1. **Fotoğraf Yükleme**: TIFF/JPG/PNG vb. dosyaları yükleyin (sürükle-bırak veya seçim).
-2. **Model Seçimi**: `backend/models/` içindeki `.pt` dosyalarından birini seçin.
-3. **Parametreler**: confidence, iou, max_det, kalite vb. ayarları isteğe göre düzenleyin.
-4. **Tespit Başlat**: Analizi başlatın.
-5. **Sonuçlar**: İşlenmiş görseller ve tespit özetlerini görüntüleyin.
-6. **İndir**: ZIP (rapor + işlenmiş görseller) olarak indirin.
-7. **Geçmiş**: Run klasörlerini arayın, görüntüleyin, zip’leyin, yeniden adlandırın veya silin.
-
----
-
-## Teknik Detaylar
-
-### Teknoloji Yığını
-- **Backend**: Python, FastAPI, Uvicorn, Ultralytics YOLO, OpenCV, Pillow, Pandas, ReportLab, ONNXRuntime
-- **Frontend**: Next.js (App Router), React, Tailwind CSS, Heroicons
-- **Paketleme**: PyInstaller (Windows, onedir)
-
-### Desteklenen Formatlar
-- **Görüntü**: TIFF, JPG/JPEG, PNG, BMP
-- **Model**: `.pt` (PyTorch)
-- **Rapor**: `.xlsx` (Excel) ve `.json`
-
-### Çalışma Dizinleri (Runtime)
-Uygulama çalışma zamanlı dosyaları **%LOCALAPPDATA%\PaintDefectAnalyzer** altında tutar:
-- `uploads/`, `results/`, `downloads/`, `temp/`
+1. Upload images (TIFF/JPG/PNG/BMP).
+2. Select model from `backend/models/`.
+3. Adjust parameters (confidence, IoU, `max_det`, quality…).
+4. Start analysis.
+5. Review processed images and detection summary.
+6. Download ZIP (report + processed images).
+7. Browse history: open, rename, zip, or delete run folders.
 
 ---
 
-## Üretim Paketleme (EXE) — PyInstaller
+## Production Packaging (Single-Folder Package)
 
-> Amaç: Python/Node gerektirmeyen, tek klasör çalıştırılabilir paket üretmek.
+Goal: ship a **no-Python / no-Node** single folder to end users.
 
-**Önkoşul:** `backend/main.py` sonunda guard mevcut olmalı (bkz. yukarı).
+### Windows (PyInstaller, `onedir`)
 
 ```bat
 .\.venv\Scripts\activate
@@ -127,20 +148,17 @@ pyinstaller --noconfirm --onedir --name "PaintDefectAnalyzer" ^
   --collect-all ultralytics ^
   --collect-submodules cv2 ^
   --collect-submodules torch ^
-  --add-data "backend\model_handler.py:." ^
-  --add-data "backend\image_processor.py:." ^
-  --add-data "backend\report_generator.py:." ^
-  --add-data "backend\file_manager.py:." ^
-  --add-data "backend\models:models" ^
-  --add-data "backend\frontend_out:frontend_out" ^
+  --add-data "backend\model_handler.py;." ^
+  --add-data "backend\image_processor.py;." ^
+  --add-data "backend\report_generator.py;." ^
+  --add-data "backend\file_manager.py;." ^
+  --add-data "backend\models;models" ^
+  --add-data "backend\frontend_out;frontend_out" ^
   --paths backend ^
   backend\main.py
 ```
 
-> **Dikkat:** Windows’ta `--add-data` için ayırıcı **`:`** olmalıdır (Linux/macOS da `:` kullanır). `;` kullanırsanız dosyalar kopyalanmaz.
-
-**Çıktı:** `dist\PaintDefectAnalyzer\`  
-İçerik örneği:
+**Output (Windows):** `dist\PaintDefectAnalyzer\`
 ```
 PaintDefectAnalyzer.exe
 _internal\
@@ -152,77 +170,133 @@ models\
 frontend_out\
 ```
 
-### Son Kullanıcı İçin Çalıştırma Script’i
-
-Aynı klasöre bir **`run_app.bat`** ekleyin:
-
+**End-user launcher (Windows):** create `run_app.bat`:
 ```bat
 @echo off
 echo =====================================
-echo 🚀 Paint Defect Analyzer Baslatiliyor...
+echo 🚀 Starting Paint Defect Analyzer...
 echo =====================================
 
 start PaintDefectAnalyzer.exe
 timeout /t 3 /nobreak >nul
 
 start http://127.0.0.1:8000
-echo ✅ Uygulama acildi!
+echo ✅ App opened!
 pause
 ```
 
-> Dağıtım: `dist\PaintDefectAnalyzer\` klasörünü ZIP’leyin, kullanıcıya verin. Kullanıcı `run_app.bat`’e çift tıklar.
+> **Note on `--add-data` separator:**  
+> - **Windows:** use `source;dest` (semicolon)  
+> - **macOS/Linux:** use `source:dest` (colon)
 
 ---
 
-## Sorun Giderme
+### macOS (PyInstaller, `onedir`)
 
-- **`/health` veya `/models` 404**  
-  `app.mount("/", StaticFiles(...))` satırı **tüm API route’larından sonra** olmalıdır.
+```bash
+# inside the venv
+pip install pyinstaller
+
+pyinstaller --noconfirm --onedir --name "PaintDefectAnalyzer" \
+  --collect-all ultralytics \
+  --collect-submodules cv2 \
+  --collect-submodules torch \
+  --add-data "backend/model_handler.py:." \
+  --add-data "backend/image_processor.py:." \
+  --add-data "backend/report_generator.py:." \
+  --add-data "backend/file_manager.py:." \
+  --add-data "backend/models:models" \
+  --add-data "backend/frontend_out:frontend_out" \
+  --paths backend \
+  backend/main.py
+```
+
+**Output (macOS):** `dist/PaintDefectAnalyzer/`
+```
+PaintDefectAnalyzer        # native binary (no .exe)
+_internal/
+model_handler.py
+image_processor.py
+report_generator.py
+file_manager.py
+models/
+frontend_out/
+```
+
+**End-user launcher (macOS):** create `run_app.command` in the same folder:
+```bash
+#!/bin/bash
+echo "====================================="
+echo "🚀 Starting Paint Defect Analyzer..."
+echo "====================================="
+
+cd "$(dirname "$0")"
+./PaintDefectAnalyzer &
+
+sleep 3
+open "http://127.0.0.1:8000"
+
+echo "✅ App opened!"
+```
+
+Make it executable:
+```bash
+cd dist/PaintDefectAnalyzer
+chmod +x PaintDefectAnalyzer run_app.command
+```
+
+**Gatekeeper / quarantine (if needed):**
+```bash
+xattr -dr com.apple.quarantine "dist/PaintDefectAnalyzer"
+```
+Or allow via **System Settings → Privacy & Security → Open Anyway**.
+
+**Distribution:** Zip the `dist/PaintDefectAnalyzer/` folder and share. Users double-click `run_app.command`.
+
+---
+
+## Runtime Folders
+
+At runtime, the app persists working files under a platform-appropriate user data dir, e.g.:
+
+- **Windows:** `%LOCALAPPDATA%\PaintDefectAnalyzer`
+- **macOS:** `~/Library/Application Support/PaintDefectAnalyzer`
+
+Typical subfolders:
+```
+uploads/
+results/
+downloads/
+temp/
+```
+
+---
+
+## Troubleshooting
+
+- **`/health` or `/models` return 404**  
+  Ensure `app.mount("/", StaticFiles(...))` is declared **after** all API routes.
 
 - **`/analyze` 400/422**  
-  Frontend formunda **grup adı (run_group)** boş olmasın. `filenames` alanı JSON string listesi olarak gider; backend’de toleranslı parse + tırnak temizleme uygulanır.
+  Ensure the frontend sends a non-empty `run_group`. The `filenames` field should be a JSON string list; backend should robustly parse and trim quotes.
 
-- **EXE’de “Could not import module 'main'”**  
-  Guard kısmında `uvicorn.run(app, ...)` kullanılmalıdır (string `"main:app"` **kullanmayın**).
+- **PyInstaller EXE error “Could not import module 'main'”**  
+  Use `uvicorn.run(app, ...)` with the **object**, not the string `"main:app"`.
 
-- **`dist` içinde `models/` veya `frontend_out/` yok**  
-  `--add-data` ayırıcıları doğru yazılmış mı kontrol edin (`:`).
+- **Missing `models/` or `frontend_out/` in `dist`**  
+  Check your `--add-data` separators (`;` on Windows, `:` on macOS/Linux).
 
-- **`npm ci` EUSAGE / lock uyumsuzluğu**  
-  `npm install` çalıştırarak lock dosyasını senkronlayın, sonra build alın.
+- **Port 8000 already in use**  
+  Stop other uvicorn/packaged instances, or change the port (`--port 8080`) and update the launcher URL.
 
-- **Port çakışması (8000)**  
-  Başka bir uvicorn/EXE çalışıyorsa kapatın veya portu değiştirin (`--port 8080`), `run_app.bat` URL’ini güncelleyin.
+- **Antivirus / SmartScreen warning (Windows)**  
+  This can happen on first run; allow/whitelist if internal distribution.
 
-- **Antivirüs/SmartScreen**  
-  İç dağıtımlarda EXE ilk çalıştırmada uyarı verebilir; “izin ver” gerekebilir.
-
----
-
-## Proje Yapısı
-
-```
-├── app/                       # Next.js frontend (kaynak)
-│   ├── page.tsx
-│   ├── layout.tsx
-│   └── globals.css
-├── backend/                   # Python backend
-│   ├── main.py                # FastAPI entry
-│   ├── model_handler.py       # YOLO model yönetimi
-│   ├── image_processor.py     # Görüntü çizim/işleme
-│   ├── report_generator.py    # Rapor üretimi
-│   ├── file_manager.py        # Upload/zip/temizlik vb.
-│   ├── models/                # .pt modeller
-│   └── requirements.txt       # Python bağımlılıkları
-├── components/                # React bileşenleri
-├── public/                    # Statik dosyalar (varsa)
-├── package.json               # Frontend scriptleri
-└── dist/                      # PyInstaller çıktısı (üretim)
-```
+- **macOS “cannot be opened because it is from an unidentified developer”**  
+  Use the quarantine command above or “Open Anyway”.
 
 ---
 
-## Lisans
+## License
 
-Lisans bilgisini buraya ekleyin (örn. MIT).
-
+Add your license here (e.g., MIT).
