@@ -499,7 +499,7 @@ export default function PaintDefectAnalyzer() {
                 ease-in-out
               "
             >
-              Uploads
+              Yüklenenler
             </button>
 
             {/* Popup Panel */}
@@ -526,7 +526,7 @@ export default function PaintDefectAnalyzer() {
       ease-in-out
     "
           >
-            Help
+            Yardım
           </button>
           <HelpDialog open={isHelpOpen} onOpenChange={setIsHelpOpen} />
           <UploadsDialog

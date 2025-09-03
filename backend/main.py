@@ -122,6 +122,30 @@ async def delete_multiple_history(items: list[dict] = Body(...)):
 
     return {"deleted": deleted, "errors": errors}
 
+#downloads selected uploads as zip
+@app.post("/uploads/zip")
+async def zip_uploads(files: list[str] = Body(...)):
+    """
+    Zip selected files from the uploads folder and return a download URL.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="No files selected")
+
+    zip_name = f"uploads_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+    zip_path = DOWNLOADS_DIR / zip_name
+
+    try:
+        import zipfile
+        with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+            for fname in files:
+                fpath = UPLOADS_DIR / fname
+                if fpath.exists():
+                    zf.write(fpath, arcname=fname)
+
+        return {"download_url": f"/downloads/{zip_name}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
     
     
 @app.post("/upload-images")

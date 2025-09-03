@@ -69,6 +69,31 @@ export function UploadsDialog({
       console.error("Delete failed", err);
     }
   };
+  const downloadSelectedAsZip = async () => {
+    if (selected.size === 0) return;
+
+    try {
+      const res = await fetch(`${apiBaseUrl}/uploads/zip`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(Array.from(selected)),
+      });
+      if (!res.ok) throw new Error("ZIP creation failed");
+
+      const data = await res.json();
+      const url = `${apiBaseUrl}${data.download_url}`;
+
+      // trigger download
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "uploads_selected.zip";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error("Download ZIP failed", err);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -88,9 +113,9 @@ export function UploadsDialog({
         "
       >
         <DialogHeader>
-          <DialogTitle>Uploaded Files</DialogTitle>
+          <DialogTitle>Yüklenen Dosyalar</DialogTitle>
           <DialogDescription>
-            Select files to delete, or click a file name to view it.
+            ZIP olarak indirmek, görüntülemek veya silmek için dosyaları seçin.
           </DialogDescription>
         </DialogHeader>
 
@@ -112,7 +137,18 @@ export function UploadsDialog({
                 }`}
                 onClick={() => toggleSelect(f.name)}
               >
-                <div className="flex justify-between items-center mb-2">
+                {/* Thumbnail preview */}
+                <div className="aspect-square bg-black/20 flex items-center justify-center mb-2 overflow-hidden rounded">
+                  <img
+                    src={`${apiBaseUrl}${f.url}`}
+                    alt={f.name}
+                    className="object-cover w-full h-full"
+                    onClick={(e) => e.stopPropagation()} // prevent toggle when clicking image
+                  />
+                </div>
+
+                {/* Filename + checkbox icon */}
+                <div className="flex justify-between items-center mb-1">
                   <span className="font-medium text-sm truncate">{f.name}</span>
                   {selected.has(f.name) ? (
                     <CheckSquareIcon className="h-4 w-4 text-blue-500" />
@@ -120,18 +156,22 @@ export function UploadsDialog({
                     <SquareIcon className="h-4 w-4 text-gray-400" />
                   )}
                 </div>
+
+                {/* File size */}
+                <p className="text-xs text-gray-400">
+                  {(f.size / 1024).toFixed(1)} KB
+                </p>
+
+                {/* Open link */}
                 <a
                   href={`${apiBaseUrl}${f.url}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="block text-xs underline text-blue-300 hover:text-blue-400 truncate"
-                  onClick={(e) => e.stopPropagation()} // prevent selecting when clicking link
+                  className="inline-block text-xs underline text-blue-300 hover:text-blue-400 mt-1 truncate"
+                  onClick={(e) => e.stopPropagation()} // don't toggle on link click
                 >
-                  Open
+                  Yeni sekmede aç
                 </a>
-                <p className="text-xs text-gray-400 mt-1">
-                  {(f.size / 1024).toFixed(1)} KB
-                </p>
               </div>
             ))}
           </div>
@@ -140,23 +180,31 @@ export function UploadsDialog({
         <DialogFooter className="mt-4 flex justify-between">
           <div className="flex gap-2">
             <Button variant="outline" onClick={selectAll}>
-              {selected.size === files.length ? "Unselect All" : "Select All"}
+              {selected.size === files.length ? "Seçimi kaldır" : "Hepsini Seç"}
             </Button>
             <Button
-              variant="destructive"
+              variant="outline"
+              disabled={selected.size === 0}
+              onClick={downloadSelectedAsZip}
+            >
+              ZIP olarak indir
+            </Button>
+
+            <Button
+              variant="outline"
               disabled={selected.size === 0}
               onClick={deleteSelected}
             >
               <TrashIcon className="h-4 w-4 mr-1" />
-              Delete Selected
+              Seçili dosyaları sil
             </Button>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={onRefresh}>
-              Refresh
+              Yenile
             </Button>
             <Button onClick={() => onOpenChange(false)} variant="outline">
-              Close
+              Kapat
             </Button>
           </div>
         </DialogFooter>
