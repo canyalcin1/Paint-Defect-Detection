@@ -168,7 +168,7 @@ export function UploadsDialog({
                   target="_blank"
                   rel="noreferrer"
                   className="inline-block text-xs underline text-blue-300 hover:text-blue-400 mt-1 truncate"
-                  onClick={(e) => e.stopPropagation()} // don't toggle on link click
+                  onClick={(e) => e.stopPropagation()}
                 >
                   Yeni sekmede aç
                 </a>
