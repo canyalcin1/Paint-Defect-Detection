@@ -4,6 +4,8 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from fastapi import Body
+from PIL import Image
+import io
 import json
 from fastapi.responses import JSONResponse
 
@@ -66,6 +68,25 @@ def slugify(name: str) -> str:
 @app.get("/health")
 def health():
     return {"ok": True}
+
+async def save_as_jpg(content: bytes, filename: str):
+    try:
+        # Pillow ile aç
+        img = Image.open(io.BytesIO(content))
+        # RGB'ye dönüştür (ör. PNG alfa kanalını silmek için)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        # Uzantıyı jpg yap
+        base_name = Path(filename).stem
+        new_filename = base_name + ".jpg"
+        save_path = UPLOADS_DIR / new_filename
+
+        img.save(save_path, format="JPEG", quality=95)
+
+        return {"success": True, "filename": new_filename, "path": str(save_path)}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 # TO delete images from "uploads" folder 
 @app.delete("/delete-upload/{filename}")
@@ -154,7 +175,8 @@ async def upload_images(files: List[UploadFile] = File(...)):
     uploaded_files, failed_files = [], []
     for f in files:
         content = await f.read()
-        result = await file_manager.save_uploaded_file(content, f.filename)
+        result = await save_as_jpg(content, f.filename)  # <-- düzeltildi
+
         if result["success"]:
             uploaded_files.append({"filename": result["filename"], "path": result["path"]})
             logger.info(f"Successfully uploaded: {result['filename']}")
@@ -166,16 +188,17 @@ async def upload_images(files: List[UploadFile] = File(...)):
         "failed_files": failed_files,
         "summary": {"total": len(files), "successful": len(uploaded_files), "failed": len(failed_files)},
     }
-    @app.get("/preview-upload/{filename}")
-    async def preview_upload(filename: str):
-        file_path = UPLOADS_DIR / filename
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="File not found")
 
-        # dosyanın MIME tipini tahmin et
-        import mimetypes
-        mime_type, _ = mimetypes.guess_type(file_path)
-        return FileResponse(file_path, media_type=mime_type or "image/jpeg")
+@app.get("/preview-upload/{filename}")
+async def preview_upload(filename: str):
+    file_path = UPLOADS_DIR / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # dosyanın MIME tipini tahmin et
+    import mimetypes
+    mime_type, _ = mimetypes.guess_type(file_path)
+    return FileResponse(file_path, media_type=mime_type or "image/jpeg")
 
 @app.post("/analyze")
 async def analyze_images(
