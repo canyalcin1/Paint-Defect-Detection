@@ -614,7 +614,7 @@ export default function PaintDefectAnalyzer() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Confidence Threshold: {confidence}</Label>
+                <Label>Eminlik yüzdesi: {confidence}</Label>
                 <Input
                   type="number"
                   min="0"
@@ -642,13 +642,32 @@ export default function PaintDefectAnalyzer() {
               <p className="text-sm text-muted-foreground mb-2">
                 Fotoğrafları buraya sürükleyin veya dosya seçin
               </p>
-              <Input
+
+              <input
+                id="file-upload"
                 type="file"
                 multiple
                 accept="image/*"
                 onChange={handleFileUpload}
-                className="max-w-xs mx-auto"
+                className="hidden"
               />
+
+              <label
+                htmlFor="file-upload"
+                className="cursor-pointer 
+             inline-flex items-center gap-2
+             border border-blue-600 
+             text-blue-600 
+             font-medium
+             px-5 py-2.5 
+             rounded-lg 
+             bg-transparent
+             hover:bg-blue-600 hover:text-white
+             transition-colors duration-400 
+             text-sm"
+              >
+                Dosya Seç
+              </label>
             </div>
 
             {selectedFiles.length > 0 && (

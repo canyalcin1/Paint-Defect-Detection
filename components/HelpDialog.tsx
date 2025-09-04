@@ -57,11 +57,12 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 klasör altında saklanır.
               </li>
               <li>
-                Emin olma yüzdesini ayarlayabilirsiniz: <em>Confidence</em>.
-              </li>
-              <li>
                 <strong>Tespit Başlat</strong> butonuna basarak seçili model ile
                 analizi başlatın.
+              </li>
+              <li>
+                <strong>Eminlik yüzdesi: </strong>
+                Yapılacak olan tahminin en az yüzde kac eminlikle yapılacağı.
               </li>
             </ul>
           </section>
@@ -105,7 +106,7 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 </ul>
               </li>
               <li>
-                Tek tek dosyaları da <em>“Yeni sekmede aç”</em> bağlantısı ile
+                Tek tek dosyaları da <em>“Yeni sekmede aç” </em> bağlantısı ile
                 görüntüleyebilirsiniz.
               </li>
             </ul>
@@ -120,7 +121,10 @@ export function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               </li>
               <li>
                 Arama kutusu ile grup adı veya run ID’ye göre filtreleme
-                yapabilirsiniz.
+                yapabilirsiniz.{" "}
+                <em>
+                  Run ID: YIL+AY+GUN_SAAT+DAKIKA+SANIYE (ör: 20250904_135752)
+                </em>
               </li>
               <li>
                 Geçmiş klasörler için yapılabilecek işlemler:
